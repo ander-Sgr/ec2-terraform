@@ -1,5 +1,5 @@
 variable "vpc_id" {
-  description = "The ID of the VPC"
+  description = "The ID of the VPC for associate the subnet"
   type        = string
 }
 
@@ -25,6 +25,11 @@ variable "map_public_ip_on_lunch" {
 }
 
 variable "name" {
-    description = "The name of the subnet"
+    description = "Name of a resource"
     type        = string
+}
+
+variable "nat_private_gateway_id" {
+  description = "The ID of the nat private gateway created"
+  type        = string
 }
