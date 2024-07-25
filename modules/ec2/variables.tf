@@ -18,15 +18,9 @@ variable "ami_key" {
   }
 }
 
-variable "key_pair" {
-    description = "Name of the SSH key pair to use fot the instnace"
-    type        = string 
-}
-
 variable "instance_type" {
   description = "Type instance EC2"
   type = string
-  default = "t2.micro"
 
   validation {
     condition     = var.instance_type == "t2.micro"
@@ -37,4 +31,21 @@ variable "instance_type" {
 variable "instance_name" {
   type = string
   default = "ec2_server_web"
+}
+
+variable "security_groups" {
+  type = list(string)
+}
+
+variable "subnet_id" {
+  type = string
+}
+
+variable "user_data" {
+  type = string
+  default = ""
+}
+
+variable "key_pair" {
+  type = string
 }
