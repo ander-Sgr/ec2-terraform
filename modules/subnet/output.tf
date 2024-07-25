@@ -9,7 +9,7 @@ output "public_subnet_ids" {
 
 output "private_subnet_id" {
   description = "ID of the private subnet"
-  value       = var.internet_gateway_id
+  value       = aws_subnet.private_subnet.id
 }
 
 output "nat_private_gateway_id" {

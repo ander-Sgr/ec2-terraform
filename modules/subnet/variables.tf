@@ -3,15 +3,25 @@ variable "vpc_id" {
   type        = string
 }
 
-variable "cidr_block" {
-  description = "The CIDR block for the subnet"
-  type        = string 
+variable "public_subnet_1_cidr" {
+  description = "CIDR block for the first public subnet"
+  type        = string
+}
+
+variable "public_subnet_2_cidr" {
+  description = "CIDR block for the second public subnet"
+  type        = string
+}
+
+variable "private_subnet_cidr" {
+  description = "CIDR block for the private subnet"
+  type        = string
 }
 
 variable "availability_zones" {
     description = "availability_zones for the subnet"
     type        = list(string)
-    default     = [ "us-east-1", "us-west-2" ]
+    default     = [ "us-east-1a", "us-east-1b" ]
 }
 
 variable "internet_gateway_id" {
@@ -22,6 +32,7 @@ variable "internet_gateway_id" {
 variable "map_public_ip_on_lunch" {
   description = "Should be true if instances in the subnet should be assigned a public IP address"
   type        = bool 
+  default     = false
 }
 
 variable "name" {
