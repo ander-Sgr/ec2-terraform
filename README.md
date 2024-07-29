@@ -40,6 +40,10 @@ load_balancer_dns = "http://loadBalancerApp-1904107911.us-east-1.elb.amazonaws.c
 
 Con este dato desde nuestro host podremos realizar un **curl** y verifciar que nos da un 200 OK como respuesta. Ya que las instancias EC2 del autoescaling group estan provisioandas con el0 servicio httpd que está en la escucha del puerto 8080
 
+```sh
+curl -I "http://loadBalancerApp-1904107911.us-east-1.elb.amazonaws.com:8080"
+```
+
 Si queremos conectarnos  por ssh al bastion tendremos el output de la IP del bastion
 
 ```sh
@@ -51,6 +55,23 @@ Ahora si queremos hacer conexión ssh desde el bastión a nuestras EC2 del autoe
 ```sh
 scp -i path/to/keyPair.pem path/to/keyPair.pem ec2-user@bastion-public-ip:/home/ec2-user/private-key.pem
 ```
+Ahora si queremos saber las IP'S de las instancias de la red privada tendremos que ejecutar
+
+```sh
+terraform plan
+```
+En la salida podremos ver las IP's de las instancias de la red privada
+
+```sh
+Changes to Outputs:
+  ~ bastion_ip              = "174.129.70.47" -> (known after apply)
+  ~ private_ips             = [
+      + "10.0.3.55",
+      + "10.0.3.90",
+    ]
+```
+
+De esta forma la variable de las ip's privadas contendrá dichas ip's. De esta forma podremos conectarnos desde el bastión a las instancias de la red privada.
 
 ## Problemas Conocidos
 
