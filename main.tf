@@ -8,8 +8,16 @@ module "security_group_alb" {
       from_port   = 8080
       to_port     = 8080
       protocol    = "TCP"
-      cidr_blocks = ["0.0.0.0/0"]
+      cidr_blocks = [var.allowed_ip]
+    },
+    {
+      from_port   = 22
+      to_port     = 22
+      protocol    = "tcp"
+      cidr_blocks = ["10.0.0.0/8"] 
+      security_groups = [] 
     }
+
   ]
 
   egress_rules = [
@@ -84,47 +92,45 @@ module "bastion_ec2" {
   subnet_id         = module.subnet_and_routes.public_subnet_ids[0]
 }
 
-module "web_instance_1" {
-  source            = "./modules/ec2"
+resource "aws_launch_template" "web" {
+  name_prefix   = "web-template"
+  image_id      = "ami-0b72821e2f351e396"
+  instance_type = "t2.micro"
+  key_name      = var.key_pair
 
-  ami_key           = "amazon_linux"
-  instance_name     = "web_instance_1"
-  instance_type     = "t2.micro"
-  key_pair          = var.key_pair
-  security_groups   = [module.security_group_ec2.security_group_id]
-  subnet_id         = module.subnet_and_routes.private_subnet_id
+  vpc_security_group_ids = [module.security_group_ec2.security_group_id]
 
-  user_data = <<-EOF
+  user_data = base64encode(<<-EOF
               #!/bin/bash
               yum update -y
               yum install -y httpd
-              echo "Instance 1" > /var/www/html/index.html
+              echo "<h1>Hello world from $(hostname -f)</h1>" > /var/www/html/index.html
+              sed -i 's/^Listen 80/Listen 8080/' /etc/httpd/conf/httpd.conf
+              sed -i 's/^<VirtualHost _default_:80>/<VirtualHost _default_:8080>/' /etc/httpd/conf/httpd.conf
               systemctl start httpd
               systemctl enable httpd
               EOF
+  )
 }
 
+resource "aws_autoscaling_group" "web_asg" {
+  desired_capacity = 2
+  max_size = 2
+  min_size = 2
+  vpc_zone_identifier = [module.subnet_and_routes.private_subnet_id]
+  target_group_arns = [module.load_balancer.target_group_arn]
+  launch_template {
+    id = aws_launch_template.web.id
+    version = "$Latest"
+  }
 
-module "web_instance_2" {
-  source            = "./modules/ec2"
-
-  ami_key           = "amazon_linux"
-  instance_name     = "web_instance_2"
-  instance_type     = "t2.micro"
-  key_pair          = var.key_pair
-  security_groups   = [module.security_group_ec2.security_group_id]
-  subnet_id         = module.subnet_and_routes.private_subnet_id
-
-  user_data = <<-EOF
-              #!/bin/bash
-              yum update -y
-              yum install -y httpd
-              echo "Instance 2" > /var/www/html/index.html
-              systemctl start httpd
-              systemctl enable httpd
-              EOF
+  tag {
+    key = "Name"
+    value = "web_serv"
+    propagate_at_launch = true
+  }
+  
 }
-
 
 module "load_balancer" {
   source = "./modules/alb"
@@ -136,11 +142,11 @@ module "load_balancer" {
   subnet                = module.subnet_and_routes.public_subnet_ids
   ec2_instance_name     = "terraform-lab"
   vpc_id                = module.my_vpc.vpc_id
-  asg_name              = ""
+  asg_name              = aws_autoscaling_group.web_asg.name
 
   health_check = {
     path                = "/"
-    port                = "traffic-port"
+    port                = "8080"
     healthy_threshold   = 5
     unhealthy_threshold = 2
     timeout             = 2
@@ -148,4 +154,15 @@ module "load_balancer" {
   }
 }
 
+data "aws_instances" "web_instances" {
+  filter {
+    name   = "tag:Name"
+    values = ["web_serv"]
+  }
+}
 
+data "aws_instance" "instance" {
+  for_each = toset(data.aws_instances.web_instances.ids)
+
+  instance_id = each.key
+}

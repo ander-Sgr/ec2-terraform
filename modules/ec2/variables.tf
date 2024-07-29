@@ -3,7 +3,7 @@ variable "ami_options" {
   type        = map(string)
   default     = {
     "ubuntu_server_22" = "ami-0a0e5d9c7acc336f1"
-    "amazon_linux"     = "ami-0b72821e2f351e396"
+    "amazon_linux"     = "ami-0427090fd1714168b"
     "debian_12"        = "ami-00402f0bdf4996822"
   }
 }
